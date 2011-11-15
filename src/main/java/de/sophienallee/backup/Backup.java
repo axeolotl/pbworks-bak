@@ -1,0 +1,114 @@
+package de.sophienallee.backup;
+
+import org.json.JSONException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * create a backup of the files in our pbworks workspace.
+ */
+public class Backup {
+    public static final String SYSTEM_PROPERTY_PBWORKS_API_READ_KEY = "PBWORKS_API_READ_KEY";
+
+    public static void main(String[] args) throws IOException, JSONException {
+        PBWorks pbworks = new PBWorks();
+        pbworks.setWorkspaceName("sophienallee");
+        String pbworks_api_read_key = System.getProperty(SYSTEM_PROPERTY_PBWORKS_API_READ_KEY);
+        if (pbworks_api_read_key == null) {
+            System.out.println("The system property " + SYSTEM_PROPERTY_PBWORKS_API_READ_KEY + " must be set");
+        }
+        pbworks.setReadKey(pbworks_api_read_key);
+
+        // here's some code examples.
+        if (false) {
+            PBWGetPage getPage = pbworks.getPage("Sophienallee");
+            if (getPage != null) {
+                System.out.println(getPage.getResponse());
+            } else {
+                System.out.println("sorry, no page could be retrieved");
+            }
+            System.exit(0);
+        }
+        if (false) {
+            PBWGetFiles getFiles = pbworks.getFiles();
+            System.out.println(getFiles.getResponse());
+        }
+        if (false) {
+            PBWGetFile getFile = new PBWGetFile();
+            getFile.setRedirect(false);
+            getFile.setFileName("2OG-S04-A3-50.pdf");
+            getFile.execute(pbworks);
+            System.out.println(getFile.getResponse());
+            File download = getFile.download();
+            System.out.println("length: " + download.length());
+            System.out.println(download.getAbsolutePath());
+        }
+        if (false) {
+            PBWGetFolders getFolders = new PBWGetFolders();
+            getFolders.setVerbose(true);
+            getFolders.execute(pbworks);
+            System.out.println(getFolders.getResponse());
+            System.out.println(getFolders.getFolders());
+        }
+
+        // here's the actualy backup.
+        if (true) {
+            GetFolderTree getFolderTree = new GetFolderTree();
+            getFolderTree.execute(pbworks);
+            File exportDir = new File("target/sophie-bak");
+            if (!(exportDir.exists() && exportDir.isDirectory()) && !exportDir.mkdirs())
+                throw new IOException("Could not create export directory sophie-bak");
+            exportFolder(pbworks, getFolderTree.getRoot(), getFolderTree, exportDir);
+        }
+    }
+
+    private static void exportFolder(PBWorks pbworks, PBWGetFolders.FolderInfo folder, GetFolderTree folderTree, File path) throws IOException, JSONException {
+        if (folder.getFilecount() > 0) {
+            if (folder.getName().equals("<root>")) {
+                // TODO
+            } else {
+                System.out.println("files in " + folder.getName() + ":");
+                PBWGetFiles getFiles = new PBWGetFiles();
+                getFiles.setFolder(folder.getName());
+                getFiles.setVerbose(true);
+                getFiles.setDetailFull(false);
+                getFiles.execute(pbworks);
+                //System.out.println(getFiles.getResponse());
+                List<PBWGetFiles.FileInfo> fileInfos = getFiles.getFileInfos();
+                System.out.println(fileInfos);
+                for (PBWGetFiles.FileInfo fileInfo : fileInfos) {
+                    File output = new File(path, fileInfo.getName());
+                    if (output.exists() && output.lastModified() >= fileInfo.getMtime()
+                            && output.length() == fileInfo.getSize()) {
+                        System.out.println("not modified: " + output);
+                    } else {
+                        PBWGetFile getFile = new PBWGetFile();
+                        getFile.setOid(fileInfo.getOid());
+                        getFile.setRedirect(false);
+                        getFile.execute(pbworks);
+                        System.out.println(getFile.getResponse());
+                        System.out.println("Downloading " + fileInfo.getSize() + " bytes to " + output);
+                        getFile.download(output);
+                    }
+                }
+            }
+        }
+        for (PBWGetFolders.FolderInfo child : folderTree.getChildren(folder)) {
+            String childName = child.getName();
+            if (childName.indexOf('/') > 0) {
+                System.out.println("SKIPPING folder with name containing slash: " + childName);
+                continue; // character is legal neither in file name nor URL path and spells trouble
+            }
+            File subpath = new File(path, childName);
+            if (!subpath.isDirectory()) {
+                System.out.println("creating directory " + subpath);
+                if (!subpath.mkdir())
+                    System.out.println(" >>> FAILED ?!");
+            }
+            exportFolder(pbworks, child, folderTree, subpath);
+        }
+
+    }
+}

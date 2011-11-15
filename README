@@ -1,0 +1,4 @@
+This project is growing to be a Java API for the PBWorks REST API, with file backup as a demo application.
+
+run using
+mvn exec:exec -Dexec.executable="java" -Dexec.args="-DPBWORKS_API_READ_KEY=... -classpath %classpath de.sophienallee.backup.Backup"

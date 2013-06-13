@@ -57,13 +57,17 @@ public class PBWGetFiles extends PBWOperation {
         for (int i = 0; i < jsonArray.length(); ++i) {
             if (verbose) {
                 JSONObject obj = jsonArray.getJSONObject(i);
-                result.add(new FileInfo(
-                        obj.getString("folder"),
-                        obj.getLong("oid"),
-                        obj.getString("name"),
-                        obj.getLong("mtime"),
-                        obj.getLong("size")
-                ));
+                try {
+                    result.add(new FileInfo(
+                            obj.getString("folder"),
+                            obj.getLong("oid"),
+                            obj.getString("name"),
+                            obj.getLong("mtime"),
+                            obj.getLong("size")
+                    ));
+                } catch (JSONException e) {
+                    System.out.println("ignoring malformed file info: "+obj);
+                }
             } else {
                 String name = jsonArray.getString(i);
                 result.add(new FileInfo(null, -1L, name, -1L, -1L));

@@ -53,13 +53,13 @@ public class Backup {
             System.out.println(getFolders.getFolders());
         }
 
-        // here's the actualy backup.
+        // here's the actual backup.
         if (true) {
             GetFolderTree getFolderTree = new GetFolderTree();
             getFolderTree.execute(pbworks);
-            File exportDir = new File("target/sophie-bak");
+            File exportDir = new File("target/pbworks-bak");
             if (!(exportDir.exists() && exportDir.isDirectory()) && !exportDir.mkdirs())
-                throw new IOException("Could not create export directory sophie-bak");
+                throw new IOException("Could not create export directory pbworks-bak");
             exportFolder(pbworks, getFolderTree.getRoot(), getFolderTree, exportDir);
         }
     }

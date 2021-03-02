@@ -17,7 +17,11 @@ public class Backup {
         pbworks.setWorkspaceName("sophienallee");
         String pbworks_api_read_key = System.getProperty(SYSTEM_PROPERTY_PBWORKS_API_READ_KEY);
         if (pbworks_api_read_key == null) {
-            System.out.println("The system property " + SYSTEM_PROPERTY_PBWORKS_API_READ_KEY + " must be set");
+            pbworks_api_read_key = System.getenv(SYSTEM_PROPERTY_PBWORKS_API_READ_KEY);
+        }
+        if (pbworks_api_read_key == null) {
+            System.out.println("The system property or env var " + SYSTEM_PROPERTY_PBWORKS_API_READ_KEY + " must be set");
+            return;
         }
         pbworks.setReadKey(pbworks_api_read_key);
 
@@ -57,9 +61,9 @@ public class Backup {
         if (true) {
             GetFolderTree getFolderTree = new GetFolderTree();
             getFolderTree.execute(pbworks);
-            File exportDir = new File("target/pbworks-bak");
+            File exportDir = new File((args.length == 0) ? "." : args[0]);
             if (!(exportDir.exists() && exportDir.isDirectory()) && !exportDir.mkdirs())
-                throw new IOException("Could not create export directory pbworks-bak");
+                throw new IOException("Could not create export directory `"+exportDir+"'");
             exportFolder(pbworks, getFolderTree.getRoot(), getFolderTree, exportDir);
         }
     }
@@ -87,10 +91,15 @@ public class Backup {
                         PBWGetFile getFile = new PBWGetFile();
                         getFile.setOid(fileInfo.getOid());
                         getFile.setRedirect(false);
-                        getFile.execute(pbworks);
-                        System.out.println(getFile.getResponse());
-                        System.out.println("Downloading " + fileInfo.getSize() + " bytes to " + output);
-                        getFile.download(output);
+                        try {
+                            getFile.execute(pbworks);
+                            System.out.println(getFile.getResponse());
+                            System.out.println("Downloading " + fileInfo.getSize() + " bytes to " + output);
+                            getFile.download(output);
+                        } catch (Exception e) {
+                            System.out.println("FAILED to download modified "+output);
+                            e.printStackTrace(System.out);
+                        }
                     }
                 }
             }

@@ -51,6 +51,10 @@ public abstract class PBWOperation {
         System.out.println("invoking " + uri);
         HttpGet httpget = new HttpGet(uri);
         HttpResponse httpResponse = pbworks.getHttpClient().execute(httpget);
+        if (httpResponse.getStatusLine().getStatusCode() != 200) {
+            System.out.println("non-OK response code: "+httpResponse);
+            // TODO: proper error handling
+        }
         HttpEntity entity = httpResponse.getEntity();
         if (entity != null) {
             String s = EntityUtils.toString(entity);

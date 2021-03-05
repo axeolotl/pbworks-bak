@@ -1,14 +1,11 @@
 This project is growing to be a Java API for the PBWorks REST API, with file backup as a demo application.
 
-after building (still on JDK 8) using
+either build and run manually (still on JDK 8) using
 
 mvn clean package
-
-run using
-
 mvn exec:exec -Dexec.executable="java" -Dexec.args="-DPBWORKS_API_READ_KEY=... -classpath %classpath de.sophienallee.backup.Backup"
 
-or
+or use dockerized build
 
 docker build -t pbworks-bak:latest .
 docker run -e PBWORKS_API_READ_KEY=... -v my-export-dir:/export pbworks-bak:latest

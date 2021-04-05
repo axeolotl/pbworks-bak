@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * response of a GetFiles operation
  */
-public class PBWGetFiles extends PBWOperation {
+public class PBWGetFiles extends PBWJSONOperation {
     private static final boolean VERBOSE_DEFAULT = true;
     boolean verbose = VERBOSE_DEFAULT;
     private static final boolean DETAIL_DEFAULT = true;

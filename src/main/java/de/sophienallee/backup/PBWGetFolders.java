@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * response of a GetFolders operation
  */
-public class PBWGetFolders extends PBWOperation {
+public class PBWGetFolders extends PBWJSONOperation {
     private static final boolean VERBOSE_DEFAULT = false;
     boolean verbose = VERBOSE_DEFAULT;
     public static final Long ROOT_FOLDER_OID = 0L;

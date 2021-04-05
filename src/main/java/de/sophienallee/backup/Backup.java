@@ -11,6 +11,7 @@ import java.util.List;
  */
 public class Backup {
     public static final String SYSTEM_PROPERTY_PBWORKS_API_READ_KEY = "PBWORKS_API_READ_KEY";
+    public static final String SYSTEM_PROPERTY_PBWORKS_API_ADMIN_KEY = "PBWORKS_API_ADMIN_KEY";
 
     public static void main(String[] args) throws IOException, JSONException {
         PBWorks pbworks = new PBWorks();
@@ -24,6 +25,14 @@ public class Backup {
             return;
         }
         pbworks.setReadKey(pbworks_api_read_key);
+
+        String pbworks_api_admin_key = System.getProperty(SYSTEM_PROPERTY_PBWORKS_API_ADMIN_KEY);
+        if (pbworks_api_admin_key == null) {
+            pbworks_api_admin_key = System.getenv(SYSTEM_PROPERTY_PBWORKS_API_ADMIN_KEY);
+        }
+        if (pbworks_api_admin_key != null) {
+            pbworks.setAdminKey(pbworks_api_admin_key);
+        }
 
         // here's some code examples.
         if (false) {
@@ -56,9 +65,34 @@ public class Backup {
             System.out.println(getFolders.getResponse());
             System.out.println(getFolders.getFolders());
         }
+        if (false) {
+            PBWCreateExport createExport = new PBWCreateExport();
+            createExport.execute(pbworks);
+            System.out.println(createExport.getResponse());
+            System.out.println(createExport.getSuccess());
+        }
+        if (false) {
+            PBWGetExportStatus getExportStatus = new PBWGetExportStatus();
+            getExportStatus.execute(pbworks);
+            System.out.println(getExportStatus.getResponse());
+            List<PBWGetExportStatus.ExportInfo> exports = getExportStatus.getExports();
+            System.out.println(exports);
+            if(exports.size()>0 && exports.get(0).getSegments().size() > 0) {
+                String segmentName = exports.get(0).getSegments().get(0).getName();
+                PBWGetExport getExport = new PBWGetExport(segmentName);
+                getExport.execute(pbworks);
+                System.out.println(getExport.download());
+            }
+        }
+        if (true) {
+            PBWDeleteExport deleteExport = new PBWDeleteExport();
+            deleteExport.execute(pbworks);
+            System.out.println(deleteExport.getResponse());
+            System.out.println(deleteExport.getSuccess());
+        }
 
         // here's the actual backup.
-        if (true) {
+        if (false) {
             GetFolderTree getFolderTree = new GetFolderTree();
             getFolderTree.execute(pbworks);
             File exportDir = new File((args.length == 0) ? "." : args[0]);

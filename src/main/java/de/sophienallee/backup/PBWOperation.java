@@ -20,11 +20,11 @@ import java.util.List;
  */
 public abstract class PBWOperation {
     List<NameValuePair> qparams = new ArrayList<NameValuePair>();
-    JSONObject response;
+    HttpResponse httpResponse;
     PBWorks pbworks;
 
-    public JSONObject getResponse() {
-        return response;
+    public HttpResponse getHttpResponse() {
+        return httpResponse;
     }
 
     abstract String getOperationName();
@@ -44,22 +44,13 @@ public abstract class PBWOperation {
                 path.append('/').append(nvp.getName()).append('/').append(nvp.getValue());
             }
             // createURI resp. new java.net.URI takes care of encoding.
-            uri = new java.net.URI(apiUri.getScheme(), apiUri.getHost(), path.toString(), null);
+            uri = new URI(apiUri.getScheme(), apiUri.getHost(), path.toString(), null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
         System.out.println("invoking " + uri);
         HttpGet httpget = new HttpGet(uri);
-        HttpResponse httpResponse = pbworks.getHttpClient().execute(httpget);
-        if (httpResponse.getStatusLine().getStatusCode() != 200) {
-            System.out.println("non-OK response code: "+httpResponse);
-            // TODO: proper error handling
-        }
-        HttpEntity entity = httpResponse.getEntity();
-        if (entity != null) {
-            String s = EntityUtils.toString(entity);
-            this.response = pbworks.getJson(s);
-        } // TODO: else ??
+        httpResponse = pbworks.getHttpClient().execute(httpget);
     }
 
     void appendAuthKey(PBWorks pbworks) {
@@ -68,6 +59,12 @@ public abstract class PBWOperation {
 
     final void addParam(String key, String value) {
         qparams.add(new BasicNameValuePair(key, value));
+    }
+
+    void addParam(String name, Boolean bool) {
+        if (bool != null) {
+            addParam(name, bool.toString());
+        }
     }
 
     void addOperationParams() {

@@ -15,6 +15,7 @@ import java.net.URISyntaxException;
  */
 public class PBWorks {
     private String readKey;
+    private String adminKey;
     private String workspaceName;
 
     public void setReadKey(String readKey) {
@@ -23,6 +24,14 @@ public class PBWorks {
 
     public String getReadKey() {
         return readKey;
+    }
+
+    public String getAdminKey() {
+        return adminKey;
+    }
+
+    public void setAdminKey(String adminKey) {
+        this.adminKey = adminKey;
     }
 
     public void setWorkspaceName(String workspaceName) {

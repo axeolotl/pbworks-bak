@@ -3,7 +3,7 @@ package de.sophienallee.backup;
 /**
  * response of a GetPage operation
  */
-public class PBWGetPage extends PBWOperation {
+public class PBWGetPage extends PBWJSONOperation {
     private String pageName;
 
     public PBWGetPage(String pageName) {

@@ -14,7 +14,7 @@ import java.net.URLEncoder;
 /**
  * GetFile operation
  */
-public class PBWGetFile extends PBWOperation {
+public class PBWGetFile extends PBWJSONOperation {
     String fileName;
     Long oid;
     private static final boolean REDIRECT_DEFAULT = true;

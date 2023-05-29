@@ -65,33 +65,48 @@ public class Backup {
             System.out.println(getFolders.getResponse());
             System.out.println(getFolders.getFolders());
         }
-        if (false) {
-            PBWCreateExport createExport = new PBWCreateExport();
-            createExport.execute(pbworks);
-            System.out.println(createExport.getResponse());
-            System.out.println(createExport.getSuccess());
-        }
-        if (false) {
-            PBWGetExportStatus getExportStatus = new PBWGetExportStatus();
-            getExportStatus.execute(pbworks);
-            System.out.println(getExportStatus.getResponse());
-            List<PBWGetExportStatus.ExportInfo> exports = getExportStatus.getExports();
-            System.out.println(exports);
-            if(exports.size()>0 && exports.get(0).getSegments().size() > 0) {
-                String segmentName = exports.get(0).getSegments().get(0).getName();
-                PBWGetExport getExport = new PBWGetExport(segmentName);
-                getExport.execute(pbworks);
-                System.out.println(getExport.download());
-            }
-        }
         if (true) {
-            PBWDeleteExport deleteExport = new PBWDeleteExport();
-            deleteExport.execute(pbworks);
-            System.out.println(deleteExport.getResponse());
-            System.out.println(deleteExport.getSuccess());
+            // clean up any pre-existing backups
+            if (!deleteExprts(pbworks)) {
+                System.err.println("failed to delete pre-exissting backuos");
+                return;
+            }
+            // start creating new backup
+            if (!createExport(pbworks)) {
+                System.err.println("failed to request new backuo");
+                return;
+            }
+            // wait for export to become available
+            PBWGetExportStatus.SegmentInfo segmentInfo = getExportSegmentInfo(pbworks);
+            try {
+                for(int retries=5; segmentInfo == null && retries > 0; --retries) {
+                    System.out.println("Still waiting, remaining retries: "+retries);
+                    Thread.sleep(10*1000L);
+                    segmentInfo = getExportSegmentInfo(pbworks);
+                }
+            } catch (InterruptedException e) {
+                System.err.println("interrupted while waiting for export to be completed");
+                throw new IOException(e);
+            }
+            if (segmentInfo == null) {
+                System.err.println("timed out waiting for export to be completed");
+                return;
+            }
+            // download generated export
+            File exportDir = new File((args.length == 0) ? "." : args[0]);
+            if (!(exportDir.exists() && exportDir.isDirectory()) && !exportDir.mkdirs())
+                throw new IOException("Could not create export directory `"+exportDir+"'");
+            String segmentName = segmentInfo.getName();
+            PBWGetExport getExport = new PBWGetExport(segmentName);
+            getExport.execute(pbworks);
+            File downloaded = new File(exportDir, segmentName);
+            System.out.println("Downloading to "+downloaded);
+            getExport.download(downloaded);
+            // clean up
+            deleteExprts(pbworks);
         }
 
-        // here's the actual backup.
+        // file backup.
         if (false) {
             GetFolderTree getFolderTree = new GetFolderTree();
             getFolderTree.execute(pbworks);
@@ -100,6 +115,33 @@ public class Backup {
                 throw new IOException("Could not create export directory `"+exportDir+"'");
             exportFolder(pbworks, getFolderTree.getRoot(), getFolderTree, exportDir);
         }
+    }
+
+    private static PBWGetExportStatus.SegmentInfo getExportSegmentInfo(PBWorks pbworks) throws IOException, JSONException {
+        PBWGetExportStatus getExportStatus = new PBWGetExportStatus();
+        getExportStatus.execute(pbworks);
+        System.out.println(getExportStatus.getResponse());
+        List<PBWGetExportStatus.ExportInfo> exports = getExportStatus.getExports();
+        System.out.println(exports);
+        PBWGetExportStatus.SegmentInfo segmentInfo = null;
+        if(exports.size()>0 && exports.get(0).getSegments().size() > 0) {
+            segmentInfo = exports.get(0).getSegments().get(0);
+        }
+        return segmentInfo;
+    }
+
+    private static boolean createExport(PBWorks pbworks) throws IOException, JSONException {
+        PBWCreateExport createExport = new PBWCreateExport();
+        createExport.execute(pbworks);
+        System.out.println(createExport.getResponse());
+        return createExport.getSuccess();
+    }
+
+    private static boolean deleteExprts(PBWorks pbworks) throws IOException, JSONException {
+        PBWDeleteExport deleteExport = new PBWDeleteExport();
+        deleteExport.execute(pbworks);
+        System.out.println(deleteExport.getResponse());
+        return deleteExport.getSuccess();
     }
 
     private static void exportFolder(PBWorks pbworks, PBWGetFolders.FolderInfo folder, GetFolderTree folderTree, File path) throws IOException, JSONException {
